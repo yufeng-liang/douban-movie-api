@@ -59,9 +59,9 @@ function parseNowPlaying(html) {
     const actorsMatch = block.match(/data-actors="([^"]*)"/);
     const raterMatch = block.match(/data-rater="(\d+)"/);
     
-    // 提取封面图
-    const imgMatch = block.match(/<img[^>]*src="([^"]*)"[^>]*alt/);
-    const poster = imgMatch ? imgMatch[1] : '';
+    // 提取封面图 - 匹配 poster 区域内的 img
+    const posterSection = block.match(/class="poster"[\s\S]*?<img[^>]*src="([^"]*)"/);
+    const poster = posterSection ? posterSection[1] : '';
     
     items.push({
       title,
@@ -130,15 +130,21 @@ function parseWeekly(html) {
   const weeklySection = html.match(/一周口碑榜[\s\S]*?<ul class="content" id="listCont2">([\s\S]*?)<\/ul>/);
   if (!weeklySection) return items;
   const listHtml = weeklySection[1];
-  const liRegex = /<li[^>]*>[\s\S]*?<div class="no">(\d+)<\/div>[\s\S]*?href="https:\/\/movie\.douban\.com\/subject\/(\d+)\/"[^>]*>\s*([\s\S]*?)\s*<\/a>/g;
+  // 匹配每个 li，提取排名、ID、标题，以及相邻的封面图
+  const liRegex = /<li[^>]*>[\s\S]*?<div class="no">(\d+)<\/div>[\s\S]*?href="https:\/\/movie\.douban\.com\/subject\/(\d+)\/"[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<\/li>/g;
   let match;
   while ((match = liRegex.exec(listHtml)) !== null) {
     const [, rank, id, title] = match;
+    // 提取同 li 内的海报
+    const block = match[0];
+    const imgMatch = block.match(/<img[^>]*src="([^"]*)"[^>]*alt/);
+    const poster = imgMatch ? imgMatch[1] : '';
     items.push({
       rank: parseInt(rank),
       title: title.trim(),
       id,
       url: `https://movie.douban.com/subject/${id}/`,
+      poster,
     });
   }
   return items;
