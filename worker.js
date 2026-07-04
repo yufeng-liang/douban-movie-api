@@ -236,14 +236,14 @@ export default {
 
     try {
       if (path === '/api/nowplaying') {
-        return await handleNowPlaying(ctx);
+        return await handleNowPlaying(ctx, request);
       } else if (path === '/api/chart') {
-        return await handleChart(ctx);
+        return await handleChart(ctx, request);
       } else if (path === '/api/weekly') {
-        return await handleWeekly(ctx);
+        return await handleWeekly(ctx, request);
       } else if (path === '/api/top250') {
         const page = parseInt(url.searchParams.get('page') || '1');
-        return await handleTop250(page, ctx);
+        return await handleTop250(page, ctx, request);
       } else if (path === '/') {
         return json({
           name: '豆瓣电影 API',
@@ -263,8 +263,8 @@ export default {
   },
 };
 
-async function handleNowPlaying(ctx) {
-  const cacheKey = 'douban:nowplaying';
+async function handleNowPlaying(ctx, request) {
+  const cacheKey = new URL(request.url).origin + '/api/nowplaying';
   const cached = await caches.default.match(cacheKey);
   if (cached) {
     const data = await cached.json();
@@ -299,8 +299,8 @@ async function handleNowPlaying(ctx) {
   return json(result);
 }
 
-async function handleChart(ctx) {
-  const cacheKey = 'douban:chart';
+async function handleChart(ctx, request) {
+  const cacheKey = new URL(request.url).origin + '/api/chart';
   const cached = await caches.default.match(cacheKey);
   if (cached) {
     const data = await cached.json();
@@ -331,8 +331,8 @@ async function handleChart(ctx) {
   return json(result);
 }
 
-async function handleWeekly(ctx) {
-  const cacheKey = 'douban:weekly';
+async function handleWeekly(ctx, request) {
+  const cacheKey = new URL(request.url).origin + '/api/weekly';
   const cached = await caches.default.match(cacheKey);
   if (cached) {
     const data = await cached.json();
@@ -363,9 +363,9 @@ async function handleWeekly(ctx) {
   return json(result);
 }
 
-async function handleTop250(page, ctx) {
+async function handleTop250(page, ctx, request) {
   page = Math.max(1, Math.min(10, page)); // 1-10页
-  const cacheKey = `douban:top250:${page}`;
+  const cacheKey = new URL(request.url).origin + '/api/top250?page=' + page;
   const cached = await caches.default.match(cacheKey);
   if (cached) {
     const data = await cached.json();

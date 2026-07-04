@@ -164,28 +164,72 @@ export async function onRequest(context) {
 
   try {
     if (path === '/nowplaying' || path === '/') {
+      const cacheUrl = new URL(request.url);
+      const cacheKey = new Request(cacheUrl.toString(), request);
+      const cached = await caches.default.match(cacheKey);
+      if (cached) {
+        const data = await cached.json();
+        data.cached = true;
+        return json(data);
+      }
       const resp = await fetch('https://movie.douban.com/', { headers: HEADERS });
       const html = await resp.text();
       const items = parseNowPlaying(html);
-      return json({ code: 0, data: items, total: items.length, updatedAt: new Date().toISOString() });
+      const result = { code: 0, data: items, total: items.length, updatedAt: new Date().toISOString() };
+      const response = new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=43200' } });
+      context.waitUntil(caches.default.put(cacheKey, response.clone()));
+      return json(result);
     } else if (path === '/chart') {
+      const cacheUrl = new URL(request.url);
+      const cacheKey = new Request(cacheUrl.toString(), request);
+      const cached = await caches.default.match(cacheKey);
+      if (cached) {
+        const data = await cached.json();
+        data.cached = true;
+        return json(data);
+      }
       const resp = await fetch('https://movie.douban.com/chart', { headers: HEADERS });
       const html = await resp.text();
       const items = parseChart(html);
-      return json({ code: 0, data: items, total: items.length, updatedAt: new Date().toISOString() });
+      const result = { code: 0, data: items, total: items.length, updatedAt: new Date().toISOString() };
+      const response = new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=43200' } });
+      context.waitUntil(caches.default.put(cacheKey, response.clone()));
+      return json(result);
     } else if (path === '/weekly') {
+      const cacheUrl = new URL(request.url);
+      const cacheKey = new Request(cacheUrl.toString(), request);
+      const cached = await caches.default.match(cacheKey);
+      if (cached) {
+        const data = await cached.json();
+        data.cached = true;
+        return json(data);
+      }
       const resp = await fetch('https://movie.douban.com/chart', { headers: HEADERS });
       const html = await resp.text();
       const items = parseWeekly(html);
-      return json({ code: 0, data: items, total: items.length, updatedAt: new Date().toISOString() });
+      const result = { code: 0, data: items, total: items.length, updatedAt: new Date().toISOString() };
+      const response = new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=43200' } });
+      context.waitUntil(caches.default.put(cacheKey, response.clone()));
+      return json(result);
     } else if (path === '/top250') {
       let page = parseInt(url.searchParams.get('page') || '1');
       page = Math.max(1, Math.min(10, page));
+      const cacheUrl = new URL(request.url);
+      const cacheKey = new Request(cacheUrl.toString(), request);
+      const cached = await caches.default.match(cacheKey);
+      if (cached) {
+        const data = await cached.json();
+        data.cached = true;
+        return json(data);
+      }
       const start = (page - 1) * 25;
       const resp = await fetch(`https://movie.douban.com/top250?start=${start}&filter=`, { headers: HEADERS });
       const html = await resp.text();
       const items = parseTop250(html);
-      return json({ code: 0, data: items, total: 250, page, pageSize: 25, updatedAt: new Date().toISOString() });
+      const result = { code: 0, data: items, total: 250, page, pageSize: 25, updatedAt: new Date().toISOString() };
+      const response = new Response(JSON.stringify(result), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=86400' } });
+      context.waitUntil(caches.default.put(cacheKey, response.clone()));
+      return json(result);
     } else {
       return json({ code: 404, message: 'Not Found' }, 404);
     }
