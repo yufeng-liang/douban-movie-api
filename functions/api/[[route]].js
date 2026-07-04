@@ -32,24 +32,38 @@ function json(data, status = 200) {
 // ==================== 正在热映 ====================
 function parseNowPlaying(html) {
   const items = [];
-  const regex = /data-title="([^"]*)"[\s\S]*?data-rate="([^"]*)"[\s\S]*?data-star="([^"]*)"[\s\S]*?data-ticket="[^"]*\/(\d+)[^"]*"[\s\S]*?data-duration="([^"]*)"[\s\S]*?data-region="([^"]*)"[\s\S]*?data-director="([^"]*)"[\s\S]*?data-actors="([^"]*)"/g;
+  // 匹配 li.ui-slide-item 元素中的 data-* 属性
+  const liRegex = /<li[^>]*class="ui-slide-item[^"]*"[^>]*data-title="([^"]*)"[^>]*data-release="([^"]*)"[^>]*data-rate="([^"]*)"[^>]*data-star="([^"]*)"[^>]*data-trailer="[^"]*\/subject\/(\d+)\//g;
   let match;
-  while ((match = regex.exec(html)) !== null) {
-    const [, title, rate, star, id, duration, region, director, actors] = match;
-    const imgRegex = new RegExp(`data-title="${escapeRegex(title)}"[\\s\\S]*?<img[^>]*src="([^"]*)"`, 'g');
-    const imgMatch = imgRegex.exec(html);
+  while ((match = liRegex.exec(html)) !== null) {
+    const [, title, release, rate, star, id] = match;
+    // 提取同一 li 元素中的其他属性
+    const blockStart = match.index;
+    const nextLi = html.indexOf('<li', blockStart + 1);
+    const block = html.substring(blockStart, nextLi > 0 ? nextLi : blockStart + 2000);
+    
+    const durationMatch = block.match(/data-duration="([^"]*)"/);
+    const regionMatch = block.match(/data-region="([^"]*)"/);
+    const directorMatch = block.match(/data-director="([^"]*)"/);
+    const actorsMatch = block.match(/data-actors="([^"]*)"/);
+    const raterMatch = block.match(/data-rater="(\d+)"/);
+    
+    // 提取封面图
+    const imgMatch = block.match(/<img[^>]*src="([^"]*)"[^>]*alt/);
     const poster = imgMatch ? imgMatch[1] : '';
+    
     items.push({
       title,
       id,
       url: `https://movie.douban.com/subject/${id}/`,
       poster,
       rating: rate || '暂无评分',
-      ratingCount: '',
-      duration,
-      region,
-      director,
-      actors: actors.split(' / ').slice(0, 3).join(' / '),
+      ratingCount: raterMatch ? raterMatch[1] + '人评价' : '',
+      release,
+      duration: durationMatch ? durationMatch[1] : '',
+      region: regionMatch ? regionMatch[1] : '',
+      director: directorMatch ? directorMatch[1] : '',
+      actors: actorsMatch ? actorsMatch[1].split(' / ').slice(0, 3).join(' / ') : '',
     });
   }
   return items;
