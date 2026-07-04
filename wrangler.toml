@@ -1,3 +1,4 @@
-name = "douban-movie-api"
+# wrangler.toml
+name = 'douban-movie-api-peak'
 main = "worker.js"
 compatibility_date = "2024-01-01"
